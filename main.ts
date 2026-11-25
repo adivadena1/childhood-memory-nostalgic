@@ -2,7 +2,7 @@
 // Writes one childhood-memory sentence (163 characters) to /output/entry.txt.
 // Deterministic, no network, no randomness, no environment input.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const LINE =
   "The hem of my school skirt was let out three times, and the last time my mother left the stitches in, so I would still have room to grow into a year she never saw.";
@@ -21,3 +21,14 @@ if (LINE.includes("\n") || LINE.includes("\r")) {
 
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", LINE, "utf8");
+
+// Write-verify: read the file back and confirm the bytes on disk are
+// exactly the validated line. A silent short write or encoding slip
+// must fail loudly here, not surface later as an invalid entry.
+const written = readFileSync("/output/entry.txt", "utf8");
+if (written !== LINE) {
+  throw new Error("entry.txt round-trip mismatch: disk content differs from LINE");
+}
+if (written.length < 1 || written.length > 280 || written.trim().length === 0) {
+  throw new Error("entry.txt fails the gate on re-read");
+}
